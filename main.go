@@ -15,9 +15,9 @@ import (
 var hitX int
 var hitY int
 var bindings map[string]string
+var ch <-chan launchpad.Hit
 
-func main() {
-	learn()
+func start() {
 	pad, err := launchpad.Open()
 	if err != nil {
 		log.Fatal(err)
@@ -26,7 +26,7 @@ func main() {
 
 	pad.Clear()
 
-	ch := pad.Listen()
+	ch = pad.Listen()
 	for {
 		select {
 		case hit := <-ch:
@@ -43,7 +43,7 @@ func main() {
 		}
 	}
 }
-func learn() {
+func main() {
 	keypressed := false
 	fmt.Println("Learning mode!")
 	fmt.Println("Please press the button that you would like to bind")
@@ -55,7 +55,7 @@ func learn() {
 
 	pad.Clear()
 
-	ch := pad.Listen()
+	ch = pad.Listen()
 	for !keypressed {
 		select {
 		case hit := <-ch:
@@ -74,11 +74,23 @@ func learn() {
 	fmt.Printf("You want to bind %s to %v, %v?\n", text, hitX, hitY)
 	yn, _ := reader.ReadString('\n')
 	yn = strings.ToUpper(yn)
-	if yn == "N" {
-		learn()
+	if strings.TrimRight(yn, "\n") == "N" {
+		pad.Close()
+		main()
 	}
 	bindings[string(hitX)+string(hitY)] = text
+	fmt.Printf("Do you want to bind more keys?\n")
+	yn1, _ := reader.ReadString('\n')
+	yn1 = strings.ToUpper(yn1)
+	if strings.TrimRight(yn1, "\n") == "Y" {
+		pad.Close()
+		main()
+	} else {
+		fmt.Println(yn1)
+	}
 	fmt.Println("Complete!")
+	pad.Close()
+	start()
 }
 
 func init() {
